@@ -18,12 +18,16 @@ blogRouter.post("/", middlewear.userExtractor, async (req, res) => {
   const blog = new Blog(req.body);
 
   const savedBlog = await blog.save();
-  req.user.blogs = req.user.blogs.concat(savedBlog._id);
+  const populatedBlog = await savedBlog.populate("user", {
+    username: 1,
+    name: 1,
+  });
+  req.user.blogs = req.user.blogs.concat(populatedBlog._id);
   await req.user.save();
-  res.status(201).json(savedBlog);
+  res.status(201).json(populatedBlog);
 });
 
-blogRouter.put("/:id", middlewear.userExtractor, async (req, res) => {
+blogRouter.put("/:id", async (req, res) => {
   const blogToUpdate = await Blog.findById(req.params.id);
   if (!blogToUpdate) {
     return res.status(404).json({ error: "Blog not found" });
@@ -32,19 +36,14 @@ blogRouter.put("/:id", middlewear.userExtractor, async (req, res) => {
     return res.status(400).json({ error: "Likes must be provided" });
   }
 
-  if (req.user._id.toString() != blogToUpdate.user.toString()) {
-    return res
-      .status(401)
-      .json({ error: "only the creator of the blog can update it" });
-  }
-
-  blogToUpdate.title = req.body.title || blogToUpdate.title;
-  blogToUpdate.author = req.body.author || blogToUpdate.author;
-  blogToUpdate.url = req.body.url || blogToUpdate.url;
   blogToUpdate.likes = req.body.likes;
   const updatedBlog = await blogToUpdate.save();
+  const populatedBlog = await updatedBlog.populate("user", {
+    username: 1,
+    name: 1,
+  });
 
-  res.json(updatedBlog);
+  res.json(populatedBlog);
 });
 
 blogRouter.delete("/:id", middlewear.userExtractor, async (req, res) => {

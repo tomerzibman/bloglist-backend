@@ -49,9 +49,22 @@ const usersInDb = async () => {
   return users.map((user) => user.toJSON());
 };
 
+const nonExistingBlogId = async () => {
+  const blog = new Blog({
+    title: "fakeasf",
+    author: "fakeAyss",
+    url: "www.fake.com",
+    likes: 0,
+  });
+  await blog.save();
+  await blog.deleteOne();
+  return blog._id.toString();
+};
+
 module.exports = {
   initialBlogs,
   blogsInDb,
   createOtherUserAndToken,
   usersInDb,
+  nonExistingBlogId,
 };
