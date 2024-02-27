@@ -176,7 +176,7 @@ test("blog will unsuccessfully delete with statuscode 401 if the user is not aut
   expect(blogsAtEnd.length).toBe(blogsAtStart.length);
 }, 10000);
 
-test("blog's likes will update successfully when given valid id, likes, and editied by the creator", async () => {
+test("blog's likes will update successfully when given valid id and likes", async () => {
   const blogsAtStart = await helper.blogsInDb();
   const blogToUpdate = blogsAtStart[0];
   const bodyToSend = {
@@ -185,27 +185,26 @@ test("blog's likes will update successfully when given valid id, likes, and edit
   const result = await api
     .put(`/api/blogs/${blogToUpdate.id}`)
     .send(bodyToSend)
-    .set({ Authorization: token })
     .expect(200);
 
   const updatedBlog = result.body;
   expect(updatedBlog.likes).toBe(bodyToSend.likes);
-}, 100000);
+}, 10000);
 
-test("blog's likes will not update when a user that is not the creator tries to edit it", async () => {
-  const otherToken = await helper.createOtherUserAndToken();
-
+test("blog's likes will not update when given valid id and no likes", async () => {
   const blogsAtStart = await helper.blogsInDb();
   const blogToUpdate = blogsAtStart[0];
+  const bodyToSend = {};
+  await api.put(`/api/blogs/${blogToUpdate.id}`).send(bodyToSend).expect(400);
+}, 10000);
+
+test("blog's likes will not update when given a non existing id with 404 status", async () => {
   const bodyToSend = {
-    likes: 6969,
+    likes: 20,
   };
-  await api
-    .put(`/api/blogs/${blogToUpdate.id}`)
-    .send(bodyToSend)
-    .set({ Authorization: otherToken })
-    .expect(401);
-}, 100000);
+  const invalidId = await helper.nonExistingBlogId();
+  await api.put(`/api/blogs/${invalidId}`).send(bodyToSend).expect(404);
+}, 30000);
 
 afterAll(async () => {
   await mongoose.connection.close();
